@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package xyz.grpc.upms;
+
+option go_package = "github.com/lucky-xin/xyz-common-oauth2-go";
+option java_package = "xyz.grpc.user.details";
+option java_outer_classname = "UserDetailsProto";
+option java_multiple_files = true;
+
+// 用户详情查询服务
+service UserDetailsSvc {
+  // 根据用户名称获取详情信息
+  rpc LoadDetailsByUserName(LoadDetailsByUserNameReq) returns (OAuth2UserDetails);
+  // 根据用户名称获取简单的信息（账号/密码/租户id。。。不包含权限）
+  rpc LoadSimpleByUserName(LoadDetailsByUserNameReq) returns (OAuth2UserDetails);
+  // 根据用户id获取详情信息
+  rpc LoadByUserId(LoadByUserIdReq) returns (OAuth2UserDetails);
+  // 根据社交登录code登录
+  rpc LoadUserBySocial(LoadUserBySocialReq) returns (OAuth2UserDetails);
+  // 创建临时访问账号
+  rpc TemporaryAccount(TemporaryAccountReq) returns (OAuth2UserDetails);
+}
+
+// 获取用户详情请求
+message LoadDetailsByUserNameReq {
+  string user_name = 1;
+}
+
+// 根据用户ID获取详情请求
+message LoadByUserIdReq {
+  int64 user_id = 1;
+}
+
+// 社交登录请求
+message LoadUserBySocialReq {
+  // 登录类型
+  string login_type = 1;
+  // 社交账号
+  string account = 2;
+}
+
+// 创建临时访问账号请求
+message TemporaryAccountReq {
+  // 账号
+  string principal = 1;
+  // 登录类型
+  string login_type = 2;
+}
+
+// 用户详情
+message OAuth2UserDetails {
+  // 用户ID
+  int64 id = 1;
+  // 部门ID
+  int64 dept_id = 2;
+  // 租户ID
+  int64 tenant_id = 3;
+  // 用户账号
+  string username = 4;
+  // 用户密码
+  string password = 5;
+  // 用户别名
+  string nickname = 6;
+  // 是否为简化对象
+  bool simple = 7;
+  // 是否启用
+  bool enabled = 8;
+  // 账号是否未过期
+  bool account_non_expired = 9;
+  // 凭据是否未过期
+  bool credentials_non_expired = 10;
+  // 账号是否未锁定
+  bool account_non_locked = 11;
+  // 角色ID列表
+  repeated int64 role_ids = 12;
+  // 角色类型列表
+  repeated int32 role_types = 13;
+  // 数据权限ID列表
+  repeated int64 data_scope_ids = 14;
+  // 权限列表
+  repeated OAuth2GrantedAuthority authorities = 15;
+  // 错误信息
+  string error_msg = 16;
+}
+
+// 授权权限
+message OAuth2GrantedAuthority {
+  // 权限字符串
+  string permission = 1;
+  // 访问次数
+  int64 authorities = 2;
+}
+

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package xyz.grpc.common;
+
+option go_package = "github.com/lucky-xin/xyz-common-oauth2-go";
+option java_package = "xyz.grpc.common";
+option java_outer_classname = "CommonProto";
+option java_multiple_files = true;
+
+// 根据ID查询请求
+message FindByIdReq {
+  int64 id = 1;
+}
+
+// 分页请求
+message PageReq {
+  // 当前页码，从1开始
+  int32 page = 1;
+  // 每页大小
+  int32 size = 2;
+}
+
+// 分页响应
+message PageResp {
+  // 总记录数
+  int64 total = 1;
+  // 总页数
+  int32 pages = 2;
+  // 当前页码
+  int32 current = 3;
+  // 每页大小
+  int32 size = 4;
+}
+
+// 通用响应
+message CommonResp {
+  // 响应码，0表示成功
+  int32 code = 1;
+  // 响应消息
+  string message = 2;
+  // 是否成功
+  bool success = 3;
+}

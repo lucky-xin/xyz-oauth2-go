@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package xyz.grpc.upms;
+
+option go_package = "github.com/lucky-xin/xyz-common-oauth2-go";
+option java_package = "xyz.grpc.encryption.config.details";
+option java_outer_classname = "EncryptionConfigDetailsProto";
+option java_multiple_files = true;
+
+// 加密配置服务
+service EncryptionConfigDetailsSvc {
+  // 根据AppId查询加密配置
+  rpc LoadByAppId(LoadByAppIdReq) returns (EncryptionConfigDetails);
+  // 根据ClientId查询加密配置
+  rpc LoadByClientId(LoadByClientIdReq) returns (EncryptionConfigDetails);
+  // 根据用户名获取AppId列表
+  rpc ListAppId(ListAppIdReq) returns (ListAppIdResp);
+}
+
+// 根据AppId查询请求
+message LoadByAppIdReq {
+  string app_id = 1;
+}
+
+// 根据ClientId查询请求
+message LoadByClientIdReq {
+  string client_id = 1;
+}
+
+// 根据用户名获取AppId列表请求
+message ListAppIdReq {
+  string user_name = 1;
+}
+
+// AppId列表响应
+message ListAppIdResp {
+  repeated string app_ids = 1;
+}
+
+// 加密配置响应
+message EncryptionConfigDetails {
+  // AppId
+  string app_id = 1;
+  // AppSecret
+  string app_secret = 2;
+  // 客户端ID
+  string client_id = 3;
+  // 客户端密钥
+  string client_secret = 4;
+  // 绑定用户名称
+  string username = 5;
+  // AES 数字签名key id
+  int64 aes_key_id = 6;
+  // EC 数字签名key id
+  int64 ec_key_id = 7;
+  // RSA 加密解码配置id
+  int64 rsa_key_id = 8;
+  // SM2 加密解码配置id
+  int64 sm2_key_id = 9;
+  // AES 数字签名key
+  bytes aes_key = 10;
+  // AES IV key
+  bytes aes_iv = 11;
+  // RSA 公钥
+  bytes rsa_public_key = 12;
+  // RSA 私钥
+  bytes rsa_private_key = 13;
+  // SM2 公钥
+  bytes sm2_public_key = 14;
+  // SM2 私钥
+  bytes sm2_private_key = 15;
+  // EC 公钥
+  bytes ec_public_key = 16;
+  // EC 私钥
+  bytes ec_private_key = 17;
+  // 数字签名token超时（单位毫秒）
+  int32 sign_timeout_millis = 18;
+  // 错误信息
+  string error_msg = 19;
+}

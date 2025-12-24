@@ -1,0 +1,83 @@
+syntax = "proto3";
+package xyz.grpc.oauth2;
+
+option java_multiple_files = true;
+option java_package = "xyz.grpc.oauth2";
+option java_outer_classname = "OAuth2Proto";
+option go_package = "github.com/lucky-xin/xyz-common-oauth2-go";
+
+// 空请求/响应
+message Empty {}
+
+// 权限认证服务
+service OAuth2Svc {
+  // 获取token key
+  rpc getTokenKey(Empty) returns (OAuth2TokenKey){}
+  // login
+  rpc login(LoginProfile) returns (OAuth2Token){}
+  // logout
+  rpc logout(LogoutProfile) returns (Empty){}
+}
+
+// token key
+message OAuth2TokenKey {
+  // token key
+  bytes key = 1;
+  // 密钥id
+  string id = 2;
+  // 加密算法
+  string alg = 3;
+}
+
+// 登录参数
+message LoginProfile {
+  // 该字段为 客户端id
+  string clientId = 1;
+
+  // 该字段为 客户端密钥
+  string clientSecret = 2;
+
+  // 授权方式password,refresh_token,authorization_code,client_credentials。默认为password
+  string grantType = 3;
+
+  // The scope of the token. default read_write
+  string scope = 4;
+
+  // 登录用户名
+  string username = 5;
+
+  // 登录密码
+  string password = 6;
+}
+
+// 登录返回token
+message OAuth2Token {
+  // token value
+  string accessToken = 1;
+
+  // The token type, as introduced in draft 11 of the OAuth 2 spec.
+  string tokenType = 2;
+
+  // The instant the token expires.
+  int32 issuedAt = 3;
+
+  // Expires at
+  int32 expiresAt = 5;
+
+  // The refresh token associated with the access token, if any.
+  string refreshToken = 6;
+
+  // The scope of the token.
+  repeated string scope = 7;
+
+  // Additional information that token granters would like to add to the token, e.g. to support new token types.
+  map<string, string> additionalInfo = 8;
+}
+
+message LogoutProfile {
+  // token
+  string token = 1;
+}
+
+
+

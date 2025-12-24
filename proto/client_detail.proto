@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package xyz.grpc.upms;
+
+option go_package = "github.com/lucky-xin/xyz-common-oauth2-go";
+option java_package = "xyz.grpc.user.details";
+option java_outer_classname = "ClientDetailsProto";
+option java_multiple_files = true;
+
+import "common.proto";
+
+// 客户端详情查询服务
+service ClientDetailsSvc {
+  // 保存
+  rpc SaveEntity(ClientDetails) returns (ClientDetails);
+  // 根据ID查询
+  rpc FindById(xyz.grpc.common.FindByIdReq) returns (ClientDetails);
+  // 业务方法
+  // 根据客户端ID查询客户端详情信息
+  rpc GetByClientId(GetByClientIdReq) returns (ClientDetails);
+}
+
+// 根据客户端ID获取详情请求
+message GetByClientIdReq {
+  // 客户端ID
+  string client_id = 1;
+}
+
+// 客户端详情信息
+message ClientDetails {
+  // ID
+  int64 id = 1;
+  // 组织ID（租户ID）
+  int64 tenant_id = 2;
+  // 客户端ID
+  string client_id = 3;
+  // 客户端密钥
+  string client_secret = 4;
+  // 客户端名称
+  string client_name = 5;
+  // 客户端有效开始时间
+  int64 client_id_issued_at = 6;
+  // 客户端有效结束时间
+  int64 client_secret_expires_at = 7;
+  // 客户端认证方式
+  repeated string client_authentication_methods = 8;
+  // 客户端授权方式
+  repeated string authorization_grant_types = 9;
+  // 客户端回调地址
+  repeated string redirect_uris = 10;
+  // 客户端授权范围
+  repeated string scopes = 11;
+  // 客户端配置
+  string client_settings = 12;
+  // 客户端令牌配置
+  string token_settings = 13;
+  // Access Token 有效期单位秒
+  int64 access_token_time_to_live_seconds = 14;
+  // Refresh Token 有效期单位秒
+  int64 refresh_token_time_to_live_seconds = 15;
+  // Authorization Code 有效期单位秒
+  int64 authorization_code_time_to_live_seconds = 16;
+  // 状态（1：有效；0：无效）
+  int32 status = 17;
+  // 删除标记
+  int32 del_flag = 18;
+  // 创建人ID
+  int64 create_user_id = 19;
+  // 修改人ID
+  int64 update_user_id = 20;
+  // 创建时间
+  int64 create_time = 21;
+  // 更新时间
+  int64 update_time = 22;
+  // 错误信息
+  string error_msg = 23;
+}
