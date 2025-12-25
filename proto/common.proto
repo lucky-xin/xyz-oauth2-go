@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package xyz.grpc.common;
 
-option go_package = "github.com/lucky-xin/xyz-common-oauth2-go";
+option go_package = "github.com/lucky-xin/xyz-oauth2-go/upms";
 option java_package = "xyz.grpc.common";
 option java_outer_classname = "CommonProto";
 option java_multiple_files = true;

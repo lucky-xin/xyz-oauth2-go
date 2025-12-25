@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
 	"io"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
 )
 
 var (

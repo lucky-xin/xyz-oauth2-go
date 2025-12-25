@@ -1,10 +1,11 @@
 package samples
 
 import (
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/authz/intro"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/details"
 	"testing"
+
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/authz/intro"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/details"
 )
 
 func TestExtractIntroToken(t *testing.T) {

@@ -2,22 +2,22 @@ package wrapper
 
 import (
 	"errors"
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/lucky-xin/xyz-common-go/env"
 	"github.com/lucky-xin/xyz-common-go/r"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/authz"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/authz/intro"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/authz/jwt"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/authz/signature"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/details"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/encrypt/conf"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/key"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/resolver"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/sign"
-	"github.com/lucky-xin/xyz-gmsm-go/encryption"
-	"net/http"
-	"time"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/authz"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/authz/intro"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/authz/jwt"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/authz/signature"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/details"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/encrypt/conf"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/key"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/resolver"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/sign"
 )
 
 type Checker struct {
@@ -27,12 +27,6 @@ type Checker struct {
 }
 
 func CreateWithEnv() *Checker {
-	privateKeyHex := env.GetString("OAUTH2_SM2_PRIVATE_KEY", "")
-	publicKeyHex := env.GetString("OAUTH2_SM2_PUBLIC_KEY", "")
-	sm2, err := encryption.NewSM2(publicKeyHex, privateKeyHex)
-	if err != nil {
-		println(err)
-	}
 	signer := sign.CreateWithEnv()
 	tokenResolver := resolver.CreateWithEnv()
 	confExpireMs := env.GetInt64("OAUTH2_ENCRYPTION_CONF_EXPIRE_MS", 6*time.Hour.Milliseconds())
@@ -42,13 +36,9 @@ func CreateWithEnv() *Checker {
 	jwtValidMethods := env.GetStringArray("OAUTH2_JWT_VALID_METHODS", []string{"HS512"})
 
 	detailsSvc := details.Create(
-		time.Duration(userDetailsExpireMs)*time.Millisecond,
-		sm2,
-		signer,
+		time.Duration(userDetailsExpireMs) * time.Millisecond,
 	)
 	confSvc := conf.Create(
-		env.GetString("OAUTH2_ISSUER_ENDPOINT", "https://127.0.0.1:6666")+"/oauth2/encryption/config",
-		sm2,
 		time.Duration(confExpireMs)*time.Millisecond,
 		time.Duration(confCleanupMs)*time.Millisecond,
 	)
@@ -72,10 +62,7 @@ func CreateWithEnv() *Checker {
 	}
 
 	restTokenKey := key.Create(
-		confSvc,
-		signer,
-		sm2,
-		time.Duration(tokenKeyExpireMs)*time.Millisecond,
+		time.Duration(tokenKeyExpireMs) * time.Millisecond,
 	)
 	return &Checker{
 		resolver: tokenResolver,

@@ -2,8 +2,8 @@ package authz
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/resolver"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/resolver"
 )
 
 // Checker token校验器接口

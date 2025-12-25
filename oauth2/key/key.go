@@ -1,16 +1,15 @@
 package key
 
 import (
-	"encoding/json"
-	"github.com/lucky-xin/xyz-common-go/env"
-	"github.com/lucky-xin/xyz-common-go/r"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/encrypt/conf"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/sign"
-	"github.com/lucky-xin/xyz-gmsm-go/encryption"
-	"github.com/patrickmn/go-cache"
-	"github.com/tjfoc/gmsm/sm2"
+	"context"
+	"log"
 	"sync"
 	"time"
+
+	"github.com/lucky-xin/xyz-common-go/env"
+	grpcconn "github.com/lucky-xin/xyz-oauth2-go/oauth2/grpc"
+	"github.com/lucky-xin/xyz-oauth2-go/upms"
+	"github.com/patrickmn/go-cache"
 )
 
 var (
@@ -24,43 +23,35 @@ type TokenKey struct {
 	Alg string `json:"alg"`
 }
 
-type RestTokenKeySvc struct {
-	encryptSvc conf.EncryptInfSvc
-	expiresMs  time.Duration
-	sm2        *encryption.SM2
-	signature  *sign.Signature
+type GrpcTokenKeySvc struct {
+	expiresMs time.Duration
+	client    upms.OAuth2SvcClient
 }
 
-func Create(svc conf.EncryptInfSvc, signature *sign.Signature, sm2 *encryption.SM2, expiresMs time.Duration) *RestTokenKeySvc {
-	return &RestTokenKeySvc{
-		encryptSvc: svc,
-		expiresMs:  expiresMs,
-		sm2:        sm2,
-		signature:  signature,
-	}
-}
-
-func CreateWithEnv() *RestTokenKeySvc {
-	privateKeyHex := env.GetString("OAUTH2_SM2_PRIVATE_KEY", "")
-	publicKeyHex := env.GetString("OAUTH2_SM2_PUBLIC_KEY", "")
-	encrypt, err := encryption.NewSM2(publicKeyHex, privateKeyHex)
+func Create(expiresMs time.Duration) *GrpcTokenKeySvc {
+	cc, err := grpcconn.GetConnection()
 	if err != nil {
-		println(err)
+		log.Fatalf("ERROR: Failed to create gRPC connection: %v", err)
+		return nil
 	}
-	return Create(
-		conf.CreateWithEnv(),
-		sign.CreateWithEnv(),
-		encrypt,
-		time.Duration(env.GetInt64("OAUTH2_TOKEN_KEY_EXPIRES_MS", 6*time.Hour.Milliseconds()))*time.Millisecond,
-	)
+	return &GrpcTokenKeySvc{
+		expiresMs: expiresMs,
+		client:    upms.NewOAuth2SvcClient(cc),
+	}
 }
 
-func (rest *RestTokenKeySvc) GetTokenKey() (byts []byte, err error) {
+func CreateWithEnv() *GrpcTokenKeySvc {
+	return Create(6 * time.Hour)
+}
+
+func (svc *GrpcTokenKeySvc) GetTokenKey() (byts []byte, err error) {
+	// 优先从环境变量获取
 	tk := env.GetString("OAUTH2_TOKEN_KEY", "")
 	if tk != "" {
 		byts = []byte(tk)
 		return
 	}
+
 	cacheKey := "token_key"
 	if tokenKey, exist := c.Get(cacheKey); !exist {
 		mu.Lock()
@@ -70,28 +61,18 @@ func (rest *RestTokenKeySvc) GetTokenKey() (byts []byte, err error) {
 			return
 		}
 
-		oauth2TokenKeyUrl := env.GetString("OAUTH2_ISSUER_ENDPOINT", "https://127.0.0.1:6666") + "/oauth2/token-key"
-		rbyts, err := rest.signature.SignGet(oauth2TokenKeyUrl, map[string]string{})
+		// 调用gRPC服务
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		resp, err := svc.client.GetTokenKey(ctx, &upms.Empty{})
 		if err != nil {
 			return nil, err
 		}
-		var resp = r.Resp[string]{}
-		err = json.Unmarshal(rbyts, &resp)
-		if err != nil {
-			return nil, err
-		}
-		var tokenKeyText []byte
-		tokenKeyText, err = rest.sm2.DecryptHex(resp.Data(), sm2.C1C3C2)
-		if err != nil {
-			return nil, err
-		}
-		var t = TokenKey{}
-		err = json.Unmarshal(tokenKeyText, &t)
-		if err != nil {
-			return nil, err
-		}
-		byts = []byte(t.Key)
-		c.Set(cacheKey, byts, rest.expiresMs)
+
+		// 直接使用key字段
+		byts = resp.Key
+		c.Set(cacheKey, byts, svc.expiresMs)
 	} else {
 		byts = tokenKey.([]byte)
 	}

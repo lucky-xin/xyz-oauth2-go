@@ -6,13 +6,14 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"github.com/lucky-xin/xyz-common-go/env"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/utils"
 	"net/url"
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/lucky-xin/xyz-common-go/env"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/utils"
 )
 
 type Signature struct {

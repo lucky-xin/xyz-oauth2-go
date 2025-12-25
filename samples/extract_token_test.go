@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
-	xjwt "github.com/lucky-xin/xyz-common-oauth2-go/oauth2/authz/jwt"
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	xjwt "github.com/lucky-xin/xyz-oauth2-go/oauth2/authz/jwt"
 )
 
 func getKeyBytes(key string) []byte {

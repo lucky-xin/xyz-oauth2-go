@@ -2,11 +2,12 @@ package resolver
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/lucky-xin/xyz-common-go/env"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
 	"log"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/lucky-xin/xyz-common-go/env"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
 )
 
 // TokenResolver token解析器

@@ -4,7 +4,7 @@ package xyz.grpc.oauth2;
 option java_multiple_files = true;
 option java_package = "xyz.grpc.oauth2";
 option java_outer_classname = "OAuth2Proto";
-option go_package = "github.com/lucky-xin/xyz-common-oauth2-go";
+option go_package = "github.com/lucky-xin/xyz-oauth2-go/upms";
 
 // 空请求/响应
 message Empty {}

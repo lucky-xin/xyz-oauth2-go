@@ -2,16 +2,17 @@ package signature
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/authz"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/details"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/encrypt/conf"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/resolver"
-	osign "github.com/lucky-xin/xyz-common-oauth2-go/oauth2/sign"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/authz"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/details"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/encrypt/conf"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/resolver"
+	osign "github.com/lucky-xin/xyz-oauth2-go/oauth2/sign"
 )
 
 type Checker struct {

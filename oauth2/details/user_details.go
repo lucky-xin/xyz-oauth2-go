@@ -1,16 +1,16 @@
 package details
 
 import (
-	"encoding/json"
-	"github.com/lucky-xin/xyz-common-go/env"
-	"github.com/lucky-xin/xyz-common-go/r"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/sign"
-	"github.com/lucky-xin/xyz-gmsm-go/encryption"
-	"github.com/patrickmn/go-cache"
-	"github.com/tjfoc/gmsm/sm2"
+	"context"
+	"log"
 	"sync"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	grpcconn "github.com/lucky-xin/xyz-oauth2-go/oauth2/grpc"
+	"github.com/lucky-xin/xyz-oauth2-go/upms"
+	"github.com/patrickmn/go-cache"
 )
 
 var (
@@ -18,32 +18,26 @@ var (
 	mu sync.RWMutex
 )
 
-type RestUserDetailsSvc struct {
+type GrpcUserDetailsSvc struct {
 	expiresMs time.Duration
-	sm2       *encryption.SM2
-	signature *sign.Signature
+	client    upms.UserDetailsSvcClient
 }
 
-func Create(expiresMs time.Duration, sm2 *encryption.SM2, signature *sign.Signature) *RestUserDetailsSvc {
-	return &RestUserDetailsSvc{expiresMs: expiresMs, sm2: sm2, signature: signature}
-}
-
-func CreateWithEnv() *RestUserDetailsSvc {
-	expireMs := env.GetInt64("OAUTH2_USER_DETAILS_EXPIRE_MS", 12*time.Hour.Milliseconds())
-	privateKeyHex := env.GetString("OAUTH2_SM2_PRIVATE_KEY", "")
-	publicKeyHex := env.GetString("OAUTH2_SM2_PUBLIC_KEY", "")
-	encrypt, err := encryption.NewSM2(publicKeyHex, privateKeyHex)
+func Create(expiresMs time.Duration) *GrpcUserDetailsSvc {
+	cc, err := grpcconn.GetConnection()
 	if err != nil {
-		println(err)
+		log.Fatalf("ERROR: Failed to create gRPC connection: %v", err)
+		return nil
 	}
-	return Create(
-		time.Duration(expireMs)*time.Millisecond,
-		encrypt,
-		sign.CreateWithEnv(),
-	)
+	return &GrpcUserDetailsSvc{expiresMs: expiresMs, client: upms.NewUserDetailsSvcClient(cc)}
 }
 
-func (rest *RestUserDetailsSvc) Get(username string) (details *oauth2.UserDetails, err error) {
+func CreateWithEnv() *GrpcUserDetailsSvc {
+	// 默认12小时过期
+	return Create(12 * time.Hour)
+}
+
+func (svc *GrpcUserDetailsSvc) Get(username string) (details *oauth2.UserDetails, err error) {
 	cacheKey := "user:" + username
 	if cached, exist := c.Get(cacheKey); !exist {
 		mu.Lock()
@@ -52,26 +46,69 @@ func (rest *RestUserDetailsSvc) Get(username string) (details *oauth2.UserDetail
 			details = cached.(*oauth2.UserDetails)
 			return
 		}
+		// 调用gRPC服务
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
-		userDetailsUrl := env.GetString("OAUTH2_ISSUER_ENDPOINT", "https://127.0.0.1:6666") + "/oauth2/user/details"
-		byts, err := rest.signature.SignGet(userDetailsUrl, map[string]string{"username": username})
+		resp, err := svc.client.LoadDetailsByUserName(ctx, &upms.LoadDetailsByUserNameReq{
+			UserName: username,
+		})
 		if err != nil {
 			return nil, err
 		}
-		var res = r.Resp[string]{}
-		err = json.Unmarshal(byts, &res)
-		if err != nil {
-			return nil, err
-		}
-		hexString := res.Data()
-		details = &oauth2.UserDetails{}
-		err = rest.sm2.DecryptObject(hexString, sm2.C1C3C2, details)
-		if err != nil {
-			return nil, err
-		}
-		c.Set(cacheKey, details, rest.expiresMs)
+
+		// 转换为UserDetails
+		details = convertToUserDetails(resp)
+		c.Set(cacheKey, details, svc.expiresMs)
 	} else {
 		details = cached.(*oauth2.UserDetails)
 	}
 	return
+}
+
+// convertToUserDetails 将gRPC的OAuth2UserDetails转换为oauth2.UserDetails
+func convertToUserDetails(grpcDetails *upms.OAuth2UserDetails) *oauth2.UserDetails {
+	if grpcDetails == nil {
+		return nil
+	}
+
+	details := &oauth2.UserDetails{
+		Id:        grpcDetails.Id,
+		TenantId:  int32(grpcDetails.TenantId),
+		Username:  grpcDetails.Username,
+		Alias:     grpcDetails.Nickname,
+		DeptId:    grpcDetails.DeptId,
+		RoleIds:   grpcDetails.RoleIds,
+		RoleTypes: convertInt32ToInt64(grpcDetails.RoleTypes),
+	}
+
+	// 转换权限列表
+	if len(grpcDetails.Authorities) > 0 {
+		details.Authorities = make([]struct {
+			Authorities int64  `json:"authorities"`
+			Authority   string `json:"authority"`
+		}, len(grpcDetails.Authorities))
+
+		for i, auth := range grpcDetails.Authorities {
+			details.Authorities[i].Authorities = auth.Authorities
+			details.Authorities[i].Authority = auth.Permission
+		}
+	}
+
+	// 设置JWT时间字段（如果需要）
+	now := time.Now()
+	details.IssuedAt = jwt.NewNumericDate(now)
+	details.NotBefore = jwt.NewNumericDate(now)
+	details.ExpiresAt = jwt.NewNumericDate(now.Add(24 * time.Hour))
+
+	return details
+}
+
+// convertInt32ToInt64 转换int32数组为int64数组
+func convertInt32ToInt64(int32Slice []int32) []int64 {
+	int64Slice := make([]int64, len(int32Slice))
+	for i, v := range int32Slice {
+		int64Slice[i] = int64(v)
+	}
+	return int64Slice
 }

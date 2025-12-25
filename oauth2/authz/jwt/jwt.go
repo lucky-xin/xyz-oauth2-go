@@ -4,10 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lucky-xin/xyz-common-go/env"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/authz"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/details"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/resolver"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/authz"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/details"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/resolver"
 )
 
 // Checker JWT校验器

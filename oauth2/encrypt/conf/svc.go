@@ -1,59 +1,42 @@
 package conf
 
 import (
-	"encoding/json"
-	"github.com/lucky-xin/xyz-common-go/env"
-	"github.com/lucky-xin/xyz-common-go/r"
-	"github.com/lucky-xin/xyz-common-go/sign"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2"
-	"github.com/lucky-xin/xyz-common-oauth2-go/oauth2/utils"
-	"github.com/lucky-xin/xyz-gmsm-go/encryption"
-	"github.com/patrickmn/go-cache"
-	"github.com/tjfoc/gmsm/sm2"
+	"context"
+	"log"
 	"sync"
 	"time"
+
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	grpcconn "github.com/lucky-xin/xyz-oauth2-go/oauth2/grpc"
+	"github.com/lucky-xin/xyz-oauth2-go/upms"
+	"github.com/patrickmn/go-cache"
 )
 
-type Svc struct {
-	EncryptionConfUrl string
-	c                 *cache.Cache
-	// 当前应用appId
-	appId string
-	// 当前应用appSecret
-	appSecret string
-
-	mua     sync.RWMutex
-	encrypt *encryption.SM2
+type GrpcEncryptionConfigSvc struct {
+	c      *cache.Cache
+	mua    sync.RWMutex
+	client upms.EncryptionConfigDetailsSvcClient
 }
 
-func Create(encryptionConfUrl string, sm2 *encryption.SM2, expireMs, cleanupMs time.Duration) *Svc {
-	return &Svc{
-		encrypt:           sm2,
-		EncryptionConfUrl: encryptionConfUrl,
-		c:                 cache.New(expireMs, cleanupMs),
-		appId:             env.GetString("OAUTH2_APP_ID", ""),
-		appSecret:         env.GetString("OAUTH2_APP_SECRET", ""),
-	}
-}
-
-func CreateWithEnv() *Svc {
-	expireMs := env.GetInt64("OAUTH2_ENCRYPTION_CONF_EXPIRE_MS", 6*time.Hour.Milliseconds())
-	cleanupMs := env.GetInt64("OAUTH2_ENCRYPTION_CONF_CLEANUP_MS", 6*time.Hour.Milliseconds())
-	privateKeyHex := env.GetString("OAUTH2_SM2_PRIVATE_KEY", "")
-	publicKeyHex := env.GetString("OAUTH2_SM2_PUBLIC_KEY", "")
-	encrypt, err := encryption.NewSM2(publicKeyHex, privateKeyHex)
+func Create(expireMs, cleanupMs time.Duration) *GrpcEncryptionConfigSvc {
+	cc, err := grpcconn.GetConnection()
 	if err != nil {
-		panic(err)
+		log.Fatalf("ERROR: Failed to create gRPC connection: %v", err)
+		return nil
 	}
-	return Create(
-		env.GetString("OAUTH2_ISSUER_ENDPOINT", "https://127.0.0.1:6666")+"/oauth2/encryption/config",
-		encrypt,
-		time.Duration(expireMs)*time.Millisecond,
-		time.Duration(cleanupMs)*time.Millisecond,
-	)
+	client := upms.NewEncryptionConfigDetailsSvcClient(cc)
+	return &GrpcEncryptionConfigSvc{
+		c:      cache.New(expireMs, cleanupMs),
+		client: client,
+	}
 }
 
-func (svc *Svc) GetEncryptInf(appId string) (*oauth2.EncryptionInf, error) {
+func CreateWithEnv() *GrpcEncryptionConfigSvc {
+	// 默认6小时过期和清理
+	return Create(6*time.Hour, 6*time.Hour)
+}
+
+func (svc *GrpcEncryptionConfigSvc) GetEncryptInf(appId string) (*oauth2.EncryptionInf, error) {
 	key := "app_id:" + appId
 	if val, b := svc.c.Get(key); b {
 		s := val.(*oauth2.EncryptionInf)
@@ -66,24 +49,36 @@ func (svc *Svc) GetEncryptInf(appId string) (*oauth2.EncryptionInf, error) {
 		s := val.(*oauth2.EncryptionInf)
 		return s, nil
 	}
-	var url string
-	queryString := "app_id=" + appId
-	url = svc.EncryptionConfUrl + "?" + queryString
-	timestamp, sgn := sign.SignWithTimestamp(svc.appSecret, queryString)
-	if respBytes, err := utils.Get(url, sgn, appId, timestamp); err != nil {
+
+	// 调用gRPC服务
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := svc.client.LoadByAppId(ctx, &upms.LoadByAppIdReq{
+		AppId: appId,
+	})
+	if err != nil {
 		return nil, err
-	} else {
-		var resp2 = &r.Resp[string]{}
-		err = json.Unmarshal(respBytes, resp2)
-		if err != nil {
-			return nil, err
-		}
-		var conf = &oauth2.EncryptionInf{}
-		err = svc.encrypt.DecryptObject(resp2.BizData, sm2.C1C3C2, conf)
-		if err != nil {
-			return nil, err
-		}
-		svc.c.Set(key, conf, 24*time.Hour)
-		return conf, nil
+	}
+
+	// 转换为EncryptionInf
+	conf := convertToEncryptionInf(resp)
+	svc.c.Set(key, conf, 24*time.Hour)
+	return conf, nil
+}
+
+// convertToEncryptionInf 将gRPC的EncryptionConfigDetails转换为oauth2.EncryptionInf
+func convertToEncryptionInf(grpcConf *upms.EncryptionConfigDetails) *oauth2.EncryptionInf {
+	if grpcConf == nil {
+		return nil
+	}
+
+	return &oauth2.EncryptionInf{
+		AppId:         grpcConf.AppId,
+		AppSecret:     grpcConf.AppSecret,
+		SM2PrivateKey: grpcConf.Sm2PrivateKey,
+		SM2PublicKey:  grpcConf.Sm2PublicKey,
+		TenantId:      0, // TenantId字段在gRPC response中没有对应字段
+		Username:      grpcConf.Username,
 	}
 }
