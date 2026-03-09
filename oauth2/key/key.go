@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	grpcconn "github.com/lucky-xin/unified-oauth2-go/oauth2/grpc"
-	"github.com/lucky-xin/unified-oauth2-go/upms"
 	"github.com/lucky-xin/xyz-common-go/env"
+	grpcconn "github.com/lucky-xin/xyz-oauth2-go/oauth2/grpc"
+	"github.com/lucky-xin/xyz-oauth2-go/upms"
 	"github.com/patrickmn/go-cache"
 )
 

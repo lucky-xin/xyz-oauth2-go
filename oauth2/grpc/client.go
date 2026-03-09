@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lucky-xin/unified-oauth2-go/upms"
 	"github.com/lucky-xin/xyz-common-go/env"
+	"github.com/lucky-xin/xyz-oauth2-go/upms"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

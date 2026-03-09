@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/lucky-xin/unified-oauth2-go/oauth2"
-	grpcconn "github.com/lucky-xin/unified-oauth2-go/oauth2/grpc"
-	"github.com/lucky-xin/unified-oauth2-go/upms"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	grpcconn "github.com/lucky-xin/xyz-oauth2-go/oauth2/grpc"
+	"github.com/lucky-xin/xyz-oauth2-go/upms"
 	"github.com/patrickmn/go-cache"
 )
 

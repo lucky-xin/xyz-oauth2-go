@@ -1,4 +1,4 @@
-module github.com/lucky-xin/unified-oauth2-go
+module github.com/lucky-xin/xyz-oauth2-go
 
 go 1.25.5
 

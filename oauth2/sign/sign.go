@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lucky-xin/unified-oauth2-go/oauth2"
-	"github.com/lucky-xin/unified-oauth2-go/oauth2/utils"
 	"github.com/lucky-xin/xyz-common-go/env"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	"github.com/lucky-xin/xyz-oauth2-go/oauth2/utils"
 )
 
 type Signature struct {
