@@ -1,7 +1,7 @@
 package conf
 
 import (
-	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	"github.com/lucky-xin/unified-oauth2-go/oauth2"
 )
 
 // EncryptInfSvc 密钥信息接口

@@ -1,20 +1,20 @@
 syntax = "proto3";
 
-package xyz.grpc.upms;
+package com.unified.grpc.upms;
 
-option go_package = "github.com/lucky-xin/xyz-oauth2-go/upms";
-option java_package = "xyz.grpc.user.details";
+option go_package = "github.com/lucky-xin/unified-oauth2-go/upms";
+option java_package = "com.unified.grpc.user.details";
 option java_outer_classname = "ClientDetailsProto";
 option java_multiple_files = true;
 
-import "proto/common.proto";
+import "common.proto";
 
 // 客户端详情查询服务
 service ClientDetailsSvc {
   // 保存
   rpc SaveEntity(ClientDetails) returns (ClientDetails);
   // 根据ID查询
-  rpc FindById(xyz.grpc.common.FindByIdReq) returns (ClientDetails);
+  rpc FindById(com.unified.grpc.common.FindByIdReq) returns (ClientDetails);
   // 业务方法
   // 根据客户端ID查询客户端详情信息
   rpc GetByClientId(GetByClientIdReq) returns (ClientDetails);

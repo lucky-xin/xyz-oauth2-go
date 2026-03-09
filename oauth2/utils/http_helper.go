@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lucky-xin/xyz-oauth2-go/oauth2"
+	"github.com/lucky-xin/unified-oauth2-go/oauth2"
 )
 
 var (

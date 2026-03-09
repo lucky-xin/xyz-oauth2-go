@@ -1,22 +1,26 @@
 syntax = "proto3";
-package xyz.grpc.oauth2;
+package com.unified.grpc.oauth2;
 
 option java_multiple_files = true;
-option java_package = "xyz.grpc.oauth2";
+option java_package = "com.unified.grpc.oauth2";
 option java_outer_classname = "OAuth2Proto";
-option go_package = "github.com/lucky-xin/xyz-oauth2-go/upms";
+option go_package = "github.com/lucky-xin/unified-oauth2-go/upms";
 
 // 空请求/响应
 message Empty {}
 
 // 权限认证服务
 service OAuth2Svc {
+  // 获取密钥
+  rpc getSecretKey(SecretKeyReq) returns (SecretKey){}
   // 获取token key
   rpc getTokenKey(Empty) returns (OAuth2TokenKey){}
   // login
   rpc login(LoginProfile) returns (OAuth2Token){}
   // logout
   rpc logout(LogoutProfile) returns (Empty){}
+  // 检查令牌有效性
+  rpc check(CheckTokenReq) returns (OAuth2AccessTokenResp){}
 }
 
 // token key
@@ -27,6 +31,35 @@ message OAuth2TokenKey {
   string id = 2;
   // 加密算法
   string alg = 3;
+}
+
+// encryption key type
+enum EncryptionKeyType {
+  RSA = 0;
+  EC = 1;
+  AES = 2;
+  SM2 = 3;
+}
+
+// 获取密钥请求
+message SecretKeyReq {
+  // 密钥类型
+  EncryptionKeyType type = 1;
+  // 随机串
+  string random = 2;
+}
+
+// secret key
+message SecretKey {
+  // 密钥类型
+  EncryptionKeyType type = 1;
+  // 公钥
+  bytes publicKey = 2;
+  // 私钥
+  bytes privateKey = 3;
+  // 错误信息
+  // 错误信息
+  string error_msg = 4;
 }
 
 // 登录参数
@@ -72,12 +105,33 @@ message OAuth2Token {
 
   // Additional information that token granters would like to add to the token, e.g. to support new token types.
   map<string, string> additionalInfo = 8;
+  // 错误信息
+  string error_msg = 9;
 }
 
 message LogoutProfile {
   // token
   string token = 1;
 }
+
+// 检查令牌请求
+message CheckTokenReq {
+  // token
+  string token = 1;
+}
+
+// OAuth2访问令牌响应
+message OAuth2AccessTokenResp {
+  // 访问令牌
+  OAuth2Token accessToken = 1;
+  // 刷新令牌值
+  string refreshToken = 2;
+  // 额外参数
+  map<string, string> additionalParameters = 3;
+  // 错误信息
+  string error_msg = 4;
+}
+
 
 
 
